@@ -1,0 +1,1112 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CAVE GRAPHICS — Panel de producción</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --void: #0A0A08;
+    --stone: #17150F;
+    --stone-raised: #201D14;
+    --groove: #38341F;
+    --groove-soft: #2A2718;
+    --chalk: #F1ECDD;
+    --chalk-dim: #A69C82;
+    --chalk-faint: #6E6650;
+    --ember: #FF6A33;
+    --ember-dim: #6B3620;
+    --magenta: #FF3465;
+    --magenta-dim: #5C2130;
+    --cyan: #3FC7D6;
+    --cyan-dim: #204246;
+  }
+
+  *{ box-sizing: border-box; }
+
+  html{ background: var(--void); }
+
+  body{
+    margin:0;
+    min-height:100vh;
+    background:
+      radial-gradient(ellipse 900px 600px at 15% -10%, rgba(255,106,51,0.08), transparent 60%),
+      radial-gradient(ellipse 700px 500px at 100% 10%, rgba(63,199,214,0.05), transparent 55%),
+      linear-gradient(180deg, var(--stone) 0%, var(--void) 100%);
+    color: var(--chalk);
+    font-family: 'IBM Plex Sans', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  /* grain texture overlay */
+  body::before{
+    content:"";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 5;
+    opacity: 0.05;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  /* faint engineering grid */
+  body::after{
+    content:"";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 4;
+    background-image:
+      repeating-linear-gradient(0deg, rgba(241,236,221,0.025) 0px, rgba(241,236,221,0.025) 1px, transparent 1px, transparent 64px),
+      repeating-linear-gradient(90deg, rgba(241,236,221,0.025) 0px, rgba(241,236,221,0.025) 1px, transparent 1px, transparent 64px);
+  }
+
+  .reg-mark{
+    position: fixed;
+    width: 26px;
+    height: 26px;
+    z-index: 6;
+    opacity: 0.4;
+    pointer-events: none;
+  }
+  .reg-mark svg{ width:100%; height:100%; display:block; }
+  .reg-tl{ top: 22px; left: 22px; }
+  .reg-tr{ top: 22px; right: 22px; }
+  .reg-bl{ bottom: 22px; left: 22px; }
+  .reg-br{ bottom: 22px; right: 22px; }
+
+  .page{
+    position: relative;
+    z-index: 10;
+    width: 100%;
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 88px 28px 100px;
+  }
+
+  /* Masthead */
+  .masthead{
+    display:flex;
+    align-items:flex-end;
+    justify-content: space-between;
+    gap: 20px;
+    border-bottom: 1px solid var(--groove);
+    padding-bottom: 26px;
+    margin-bottom: 42px;
+    flex-wrap: wrap;
+  }
+
+  .masthead-left{ min-width: 0; }
+
+  .eyebrow{
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--chalk-dim);
+    margin: 0 0 14px;
+    display:flex;
+    align-items:center;
+    gap: 10px;
+  }
+
+  .eyebrow .dot{
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--ember);
+    box-shadow: 0 0 8px 1px rgba(255,106,51,0.7);
+  }
+
+  h1{
+    font-family: 'Archivo Black', sans-serif;
+    font-size: clamp(38px, 8vw, 64px);
+    letter-spacing: -0.01em;
+    line-height: 0.95;
+    margin: 0;
+    text-transform: uppercase;
+    color: var(--chalk);
+    text-shadow:
+      0 1px 0 rgba(0,0,0,0.6),
+      0 2px 6px rgba(0,0,0,0.5),
+      0 0 22px rgba(255,106,51,0.08);
+  }
+
+  .sub{
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12.5px;
+    color: var(--chalk-faint);
+    margin-top: 12px;
+    letter-spacing: 0.02em;
+  }
+
+  .stat-plate{
+    font-family: 'IBM Plex Mono', monospace;
+    text-align: right;
+    flex-shrink: 0;
+    border-left: 1px dashed var(--groove);
+    padding-left: 18px;
+  }
+
+  .stat-plate .n{
+    font-size: 30px;
+    font-weight: 600;
+    color: var(--ember);
+    line-height: 1;
+  }
+
+  .stat-plate .l{
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--chalk-faint);
+    margin-top: 4px;
+  }
+
+  /* Sync status pill */
+  .sync-status{
+    display:flex;
+    align-items:center;
+    gap: 6px;
+    justify-content: flex-end;
+    margin-top: 10px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9.5px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--chalk-faint);
+  }
+
+  .sync-status .sd{
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--chalk-faint);
+    flex-shrink: 0;
+  }
+
+  .sync-status.live .sd{
+    background: var(--cyan);
+    box-shadow: 0 0 6px 1px rgba(63,199,214,0.7);
+    animation: pulse-dot 2s ease-in-out infinite;
+  }
+
+  .sync-status.live{ color: var(--cyan); }
+
+  .sync-status.offline .sd{
+    background: var(--magenta);
+    box-shadow: 0 0 6px 1px rgba(255,52,101,0.6);
+  }
+
+  .sync-status.offline{ color: var(--magenta); }
+
+  @keyframes pulse-dot{
+    0%, 100%{ opacity: 1; }
+    50%{ opacity: 0.35; }
+  }
+
+  /* Composer */
+  .composer{
+    background: var(--stone-raised);
+    border: 1px solid var(--groove);
+    border-radius: 6px;
+    padding: 20px 22px;
+    margin-bottom: 40px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.02), 0 12px 30px -18px rgba(0,0,0,0.7);
+  }
+
+  .composer-label{
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--chalk-faint);
+    margin: 0 0 14px;
+    display:flex;
+    align-items:center;
+    gap: 8px;
+  }
+
+  .composer-label svg{ width:12px; height:12px; stroke:var(--ember); }
+
+  .composer-row{
+    display:flex;
+    align-items:center;
+    gap: 18px;
+    border-bottom: 1px solid var(--groove);
+    padding-bottom: 14px;
+    flex-wrap: wrap;
+  }
+
+  #task-input{
+    flex: 1;
+    min-width: 200px;
+    border: none;
+    background: transparent;
+    outline: none;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-weight: 500;
+    font-size: 18px;
+    color: var(--chalk);
+    padding: 6px 2px;
+  }
+
+  #task-input::placeholder{ color: var(--chalk-faint); }
+
+  .date-field{
+    display:flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .date-field label{
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--chalk-faint);
+  }
+
+  #date-input{
+    border: 1px solid var(--groove);
+    border-radius: 4px;
+    background: var(--stone);
+    outline: none;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    color: var(--chalk);
+    padding: 6px 8px;
+    color-scheme: dark;
+  }
+
+  #date-input:focus-visible, #task-input:focus-visible{
+    outline: 2px solid var(--ember);
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+
+  .composer-submit{
+    border: 1px solid var(--groove);
+    border-radius: 4px;
+    background: var(--stone);
+    color: var(--chalk-dim);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11.5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 8px 14px;
+    cursor: pointer;
+    transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+  }
+
+  .composer-submit:hover{
+    border-color: var(--ember);
+    color: var(--ember);
+    background: var(--ember-dim);
+  }
+
+  .hint{
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11.5px;
+    color: var(--chalk-faint);
+    margin: 12px 0 0;
+  }
+
+  .hint kbd{
+    font-family: inherit;
+    border: 1px solid var(--groove);
+    border-radius: 4px;
+    padding: 1px 7px;
+    background: var(--stone);
+    color: var(--chalk-dim);
+  }
+
+  /* List header */
+  .list-header{
+    display:grid;
+    grid-template-columns: 46px 68px 1fr auto;
+    gap: 16px;
+    align-items:center;
+    padding: 0 4px 10px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--chalk-faint);
+    border-bottom: 1px solid var(--groove);
+  }
+
+  .list-header span:last-child{ text-align: right; }
+
+  /* List */
+  .list{
+    list-style: none;
+    margin:0;
+    padding:0;
+  }
+
+  .task{
+    display:grid;
+    grid-template-columns: 46px 68px 1fr auto;
+    gap: 16px;
+    align-items:center;
+    padding: 18px 4px;
+    border-bottom: 1px solid var(--groove-soft);
+    transition: opacity 0.4s ease, clip-path 0.4s ease, max-height 0.4s ease, padding 0.4s ease;
+    max-height: 200px;
+    clip-path: inset(0 0 0 0);
+  }
+
+  .task:hover .task-text{
+    box-shadow: inset 0 -2px 0 var(--ember);
+  }
+
+  .task.hiding{
+    opacity: 0;
+    clip-path: inset(0 0 0 100%);
+    max-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    border-bottom-color: transparent;
+  }
+
+  .index{
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--chalk-faint);
+  }
+
+  .task-actions{
+    display:flex;
+    align-items:center;
+    gap: 6px;
+  }
+
+  .icon-btn{
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 1px solid var(--groove);
+    background: var(--stone-raised);
+    cursor: pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding: 0;
+    flex-shrink: 0;
+    transition: background 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
+  }
+
+  .icon-btn svg{
+    width: 15px; height: 15px;
+    stroke: var(--chalk-dim);
+    fill: none;
+  }
+
+  .icon-btn:focus-visible{
+    outline: 2px solid var(--ember);
+    outline-offset: 2px;
+  }
+
+  .eye-btn:hover{
+    border-color: var(--ember);
+    background: var(--ember-dim);
+  }
+  .eye-btn:hover svg{ stroke: var(--ember); }
+
+  .edit-btn{ opacity: 0; }
+  .edit-btn:hover{
+    border-color: var(--cyan);
+    background: var(--cyan-dim);
+  }
+  .edit-btn:hover svg{ stroke: var(--cyan); }
+  .edit-btn:focus-visible{ opacity: 1; }
+
+  .task:hover .edit-btn,
+  .task:focus-within .edit-btn{ opacity: 1; }
+
+  .task-body{
+    min-width: 0;
+    display:flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .task-text{
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-weight: 500;
+    font-size: 16.5px;
+    line-height: 1.35;
+    word-break: break-word;
+    width: fit-content;
+    box-shadow: inset 0 -2px 0 transparent;
+    transition: box-shadow 0.2s ease;
+  }
+
+  .add-date-link{
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11.5px;
+    color: var(--chalk-faint);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    width: fit-content;
+    text-decoration: underline;
+    text-decoration-style: dotted;
+    text-underline-offset: 3px;
+  }
+
+  .add-date-link:hover{ color: var(--cyan); }
+
+  .inline-date-input{
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11.5px;
+    border: 1px solid var(--groove);
+    border-radius: 4px;
+    padding: 4px 7px;
+    background: var(--stone);
+    color: var(--chalk);
+    color-scheme: dark;
+  }
+
+  /* Edit mode */
+  .edit-form{
+    display:flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .edit-form-row{
+    display:flex;
+    align-items:center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .edit-text-input{
+    flex: 1;
+    min-width: 160px;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-weight: 500;
+    font-size: 16.5px;
+    color: var(--chalk);
+    background: var(--stone);
+    border: 1px solid var(--groove);
+    border-radius: 4px;
+    padding: 7px 9px;
+    outline: none;
+  }
+
+  .edit-text-input:focus-visible{
+    outline: 2px solid var(--cyan);
+    outline-offset: 2px;
+  }
+
+  .edit-date-input{
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12.5px;
+    border: 1px solid var(--groove);
+    border-radius: 4px;
+    padding: 6px 8px;
+    background: var(--stone);
+    color: var(--chalk);
+    color-scheme: dark;
+    outline: none;
+  }
+
+  .edit-form-actions{
+    display:flex;
+    gap: 8px;
+  }
+
+  .edit-form-actions button{
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    border-radius: 4px;
+    padding: 6px 12px;
+    cursor: pointer;
+    border: 1px solid var(--groove);
+    background: var(--stone);
+    color: var(--chalk-dim);
+    transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+  }
+
+  .save-edit-btn:hover{
+    border-color: var(--cyan);
+    color: var(--cyan);
+    background: var(--cyan-dim);
+  }
+
+  .cancel-edit-btn:hover{
+    border-color: var(--magenta);
+    color: var(--magenta);
+    background: var(--magenta-dim);
+  }
+
+  .stamp{
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    padding: 5px 11px;
+    border-radius: 3px;
+    border: 1.5px dashed;
+    white-space: nowrap;
+    transform: rotate(-2deg);
+    text-align: center;
+  }
+
+  .stamp.upcoming{
+    border-color: var(--cyan);
+    color: var(--cyan);
+    background: var(--cyan-dim);
+  }
+
+  .stamp.today{
+    border-color: var(--ember);
+    color: var(--ember);
+    background: var(--ember-dim);
+  }
+
+  .stamp.overdue{
+    border-color: var(--magenta);
+    color: var(--magenta);
+    background: var(--magenta-dim);
+  }
+
+  /* Empty state */
+  .empty{
+    padding: 60px 20px;
+    text-align: center;
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--chalk-faint);
+    font-size: 13.5px;
+    border: 1px dashed var(--groove);
+    border-radius: 6px;
+    margin-top: 4px;
+  }
+
+  .empty strong{
+    display:block;
+    font-family: 'Archivo Black', sans-serif;
+    font-size: 15px;
+    color: var(--chalk-dim);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    letter-spacing: 0.02em;
+  }
+
+  footer{
+    margin-top: 48px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    color: var(--chalk-faint);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    display:flex;
+    align-items:center;
+    gap: 10px;
+  }
+
+  footer svg{ width:12px; height:12px; stroke:var(--chalk-faint); }
+
+  @media (max-width: 560px){
+    .masthead{ flex-direction: column; align-items: flex-start; }
+    .stat-plate{ border-left:none; padding-left:0; text-align:left; }
+    .sync-status{ justify-content: flex-start; }
+    .list-header{ grid-template-columns: 34px 58px 1fr; }
+    .list-header span:nth-child(3){ text-align:left; }
+    .list-header span:last-child{ display:none; }
+    .task{ grid-template-columns: 34px 58px 1fr; row-gap: 10px; }
+    .stamp{ grid-column: 3; justify-self: start; margin-top: 2px; }
+    .task-date-row .stamp{ grid-column: auto; }
+    /* Pencil is always reachable on touch devices, no hover to reveal it */
+    .edit-btn{ opacity: 1; }
+  }
+
+  @media (hover: none){
+    .edit-btn{ opacity: 1; }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .task{ transition: none; }
+    .sync-status.live .sd{ animation: none; }
+  }
+</style>
+</head>
+<body>
+
+  <div class="reg-mark reg-tl"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1"/><path d="M12 0V24M0 12H24" stroke="currentColor" stroke-width="1"/></svg></div>
+  <div class="reg-mark reg-tr"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1"/><path d="M12 0V24M0 12H24" stroke="currentColor" stroke-width="1"/></svg></div>
+  <div class="reg-mark reg-bl"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1"/><path d="M12 0V24M0 12H24" stroke="currentColor" stroke-width="1"/></svg></div>
+  <div class="reg-mark reg-br"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1"/><path d="M12 0V24M0 12H24" stroke="currentColor" stroke-width="1"/></svg></div>
+
+  <div class="page">
+    <div class="masthead">
+      <div class="masthead-left">
+        <p class="eyebrow"><span class="dot"></span>Estudio de diseño — Panel de producción</p>
+        <h1>Cave Graphics</h1>
+        <p class="sub">Tareas activas, ordenadas por urgencia de entrega</p>
+      </div>
+      <div class="stat-plate">
+        <div class="n" id="stat-count">0</div>
+        <div class="l">Capas activas</div>
+        <div class="sync-status" id="sync-status"><span class="sd"></span><span id="sync-status-text">Local</span></div>
+      </div>
+    </div>
+
+    <div class="composer">
+      <p class="composer-label">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round"><path d="M12 5V19M5 12H19"/></svg>
+        Nueva capa de trabajo
+      </p>
+      <div class="composer-row">
+        <input id="task-input" type="text" placeholder="Describe la tarea…" autocomplete="off">
+        <div class="date-field">
+          <label for="date-input">Entrega</label>
+          <input id="date-input" type="date">
+        </div>
+        <button type="button" class="composer-submit" id="add-btn">Agregar</button>
+      </div>
+      <p class="hint">Presiona <kbd>Enter</kbd> o el botón para agregarla al panel.</p>
+    </div>
+
+    <div class="list-header">
+      <span>#</span>
+      <span></span>
+      <span>Tarea</span>
+      <span>Entrega</span>
+    </div>
+
+    <ul class="list" id="task-list"></ul>
+
+    <footer>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="M12 3V21M3 12H21"/></svg>
+      Cave Graphics · Panel de producción
+    </footer>
+  </div>
+
+<!--
+  ══════════════════════════════════════════════════════════════════
+  SINCRONIZACIÓN ENTRE DISPOSITIVOS (Supabase)
+  ══════════════════════════════════════════════════════════════════
+  Conectado al proyecto "Cave" (owltcxzfbitmbynhwtvq.supabase.co)
+  usando la clave pública "anon". Antes de que esto funcione debes
+  crear la tabla una sola vez: entra al SQL Editor de tu proyecto
+  Supabase y ejecuta el script que te dejo en el chat (crea la tabla
+  "tasks" y las políticas de acceso). Una vez ejecutado, cualquier
+  dispositivo que abra este archivo verá los mismos datos en tiempo
+  real gracias a Supabase Realtime.
+
+  La clave "anon" es segura para usar en el navegador: por diseño de
+  Supabase no otorga privilegios de administrador, solo lo que las
+  políticas RLS de la tabla permitan (definidas en el script SQL).
+  ══════════════════════════════════════════════════════════════════
+-->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+(function(){
+  const STORAGE_KEY = 'cave-graphics-tasks';
+
+  // ── Proyecto Supabase "Cave" — clave pública "anon", segura para el navegador ──
+  const SUPABASE_URL = 'https://owltcxzfbitmbynhwtvq.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im93bHRjeHpmYml0bWJ5bmh3dHZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM1Mzg2NTYsImV4cCI6MjA5OTExNDY1Nn0.Xf3F193KXHSH5lJkPoOfzlaeymRpK2AXPqofI07AYVs';
+  // ──────────────────────────────────────────────────────────────────
+
+  const input = document.getElementById('task-input');
+  const dateInput = document.getElementById('date-input');
+  const addBtn = document.getElementById('add-btn');
+  const list = document.getElementById('task-list');
+  const statCount = document.getElementById('stat-count');
+  const syncStatus = document.getElementById('sync-status');
+  const syncStatusText = document.getElementById('sync-status-text');
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  let tasks = [];
+  let supabaseClient = null;
+  let supabaseEnabled = false;
+  let editingId = null;
+
+  function setSyncUI(state){
+    // state: 'live' | 'offline' | 'local'
+    syncStatus.className = 'sync-status' + (state === 'live' ? ' live' : state === 'offline' ? ' offline' : '');
+    syncStatusText.textContent = state === 'live' ? 'En vivo' : state === 'offline' ? 'Sin conexión' : 'Local';
+  }
+
+  function loadLocalCache(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      tasks = raw ? JSON.parse(raw) : [];
+    }catch(e){
+      tasks = [];
+    }
+  }
+
+  function saveLocalCache(){
+    try{
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+    }catch(e){ /* almacenamiento no disponible en este contexto */ }
+  }
+
+  async function refetchTasks(){
+    const { data, error } = await supabaseClient
+      .from('tasks')
+      .select('*')
+      .order('created_at', { ascending: true });
+    if(error){
+      setSyncUI('offline');
+      return;
+    }
+    tasks = (data || []).map(row => ({
+      id: row.id,
+      text: row.text,
+      date: row.date,
+      createdAt: row.created_at
+    }));
+    saveLocalCache();
+    render();
+  }
+
+  async function initSupabase(){
+    if(typeof window.supabase === 'undefined'){
+      setSyncUI('local');
+      return;
+    }
+    try{
+      supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      supabaseEnabled = true;
+
+      await refetchTasks();
+
+      supabaseClient
+        .channel('tasks-changes')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, () => {
+          refetchTasks();
+        })
+        .subscribe((status) => {
+          if(status === 'SUBSCRIBED') setSyncUI('live');
+          else if(status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') setSyncUI('offline');
+        });
+    }catch(e){
+      supabaseEnabled = false;
+      setSyncUI('offline');
+    }
+  }
+
+  function daysUntil(dateStr){
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    const target = new Date(dateStr + 'T00:00:00');
+    return Math.round((target - today) / 86400000);
+  }
+
+  // Categoría de urgencia: 0 vencida, 1 hoy, 2 próxima, 3 sin fecha
+  function urgencyOf(task){
+    if(!task.date) return { cat: 3, diff: null };
+    const diff = daysUntil(task.date);
+    if(diff < 0) return { cat: 0, diff };
+    if(diff === 0) return { cat: 1, diff };
+    return { cat: 2, diff };
+  }
+
+  function sortedTasks(){
+    return [...tasks].sort((a, b) => {
+      const ua = urgencyOf(a), ub = urgencyOf(b);
+      if(ua.cat !== ub.cat) return ua.cat - ub.cat;
+      if(ua.cat === 0) return ua.diff - ub.diff;   // más vencida primero (más negativo)
+      if(ua.cat === 2) return ua.diff - ub.diff;   // más próxima primero
+      return (a.createdAt || 0) - (b.createdAt || 0); // orden de creación como desempate
+    });
+  }
+
+  function eyeIcon(){
+    return `<svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8">
+      <path d="M1.5 12S5 5 12 5s10.5 7 10.5 7-3.5 7-10.5 7S1.5 12 1.5 12Z"/>
+      <circle cx="12" cy="12" r="3"/>
+    </svg>`;
+  }
+
+  function pencilIcon(){
+    return `<svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8">
+      <path d="M17 3.5a2.1 2.1 0 0 1 3 3L7.5 19 3 20l1-4.5Z"/>
+      <path d="M15 5.5 18.5 9"/>
+    </svg>`;
+  }
+
+  function checkIcon(){
+    return `<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>`;
+  }
+
+  function xIcon(){
+    return `<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>`;
+  }
+
+  function stampFor(task){
+    const u = urgencyOf(task);
+    if(u.cat === 3) return null;
+    if(u.cat === 0){
+      const d = Math.abs(u.diff);
+      return { cls: 'overdue', text: `VENCIDA · D+${d}` };
+    }
+    if(u.cat === 1) return { cls: 'today', text: 'ENTREGA HOY' };
+    return { cls: 'upcoming', text: `D-${u.diff}` };
+  }
+
+  function render(){
+    const ordered = sortedTasks();
+    list.innerHTML = '';
+    statCount.textContent = tasks.length;
+
+    if(ordered.length === 0){
+      const empty = document.createElement('li');
+      empty.className = 'empty';
+      empty.innerHTML = `<strong>Panel vacío</strong>No hay capas activas. Agrega la primera tarea arriba.`;
+      list.appendChild(empty);
+      return;
+    }
+
+    ordered.forEach((task, i) => {
+      const li = document.createElement('li');
+      li.className = 'task';
+      li.dataset.id = task.id;
+
+      const index = document.createElement('span');
+      index.className = 'index';
+      index.textContent = String(i + 1).padStart(2, '0');
+      li.appendChild(index);
+
+      const actions = document.createElement('div');
+      actions.className = 'task-actions';
+
+      const eyeBtn = document.createElement('button');
+      eyeBtn.className = 'icon-btn eye-btn';
+      eyeBtn.type = 'button';
+      eyeBtn.innerHTML = eyeIcon();
+      eyeBtn.setAttribute('aria-label', `Completar y quitar "${task.text}"`);
+      eyeBtn.addEventListener('click', () => removeTask(task.id));
+      actions.appendChild(eyeBtn);
+
+      const editBtn = document.createElement('button');
+      editBtn.className = 'icon-btn edit-btn';
+      editBtn.type = 'button';
+      editBtn.innerHTML = pencilIcon();
+      editBtn.setAttribute('aria-label', `Editar "${task.text}"`);
+      editBtn.addEventListener('click', () => {
+        editingId = task.id;
+        render();
+      });
+      actions.appendChild(editBtn);
+
+      li.appendChild(actions);
+
+      const body = document.createElement('div');
+      body.className = 'task-body';
+
+      if(editingId === task.id){
+        body.appendChild(buildEditForm(task));
+      } else {
+        const text = document.createElement('div');
+        text.className = 'task-text';
+        text.textContent = task.text;
+        body.appendChild(text);
+
+        if(!task.date){
+          const link = document.createElement('button');
+          link.type = 'button';
+          link.className = 'add-date-link';
+          link.textContent = '+ Añadir fecha de entrega';
+          link.addEventListener('click', () => promptDate(task.id, body, link));
+          body.appendChild(link);
+        }
+      }
+
+      li.appendChild(body);
+
+      if(editingId === task.id){
+        li.appendChild(document.createElement('span'));
+      } else {
+        const stamp = stampFor(task);
+        if(stamp){
+          const s = document.createElement('span');
+          s.className = `stamp ${stamp.cls}`;
+          s.textContent = stamp.text;
+          li.appendChild(s);
+        } else {
+          li.appendChild(document.createElement('span'));
+        }
+      }
+
+      list.appendChild(li);
+    });
+
+    if(editingId){
+      const activeInput = list.querySelector(`[data-id="${editingId}"] .edit-text-input`);
+      if(activeInput){
+        activeInput.focus();
+        activeInput.setSelectionRange(activeInput.value.length, activeInput.value.length);
+      }
+    }
+  }
+
+  function buildEditForm(task){
+    const form = document.createElement('div');
+    form.className = 'edit-form';
+
+    const row1 = document.createElement('div');
+    row1.className = 'edit-form-row';
+
+    const textInput = document.createElement('input');
+    textInput.type = 'text';
+    textInput.className = 'edit-text-input';
+    textInput.value = task.text;
+
+    const dateInputEl = document.createElement('input');
+    dateInputEl.type = 'date';
+    dateInputEl.className = 'edit-date-input';
+    dateInputEl.value = task.date || '';
+
+    row1.appendChild(textInput);
+    row1.appendChild(dateInputEl);
+
+    const row2 = document.createElement('div');
+    row2.className = 'edit-form-actions';
+
+    const saveBtn = document.createElement('button');
+    saveBtn.type = 'button';
+    saveBtn.className = 'save-edit-btn';
+    saveBtn.innerHTML = checkIcon() + ' Guardar';
+    saveBtn.addEventListener('click', () => commitEdit(task.id, textInput.value, dateInputEl.value));
+
+    const cancelBtn = document.createElement('button');
+    cancelBtn.type = 'button';
+    cancelBtn.className = 'cancel-edit-btn';
+    cancelBtn.innerHTML = xIcon() + ' Cancelar';
+    cancelBtn.addEventListener('click', () => { editingId = null; render(); });
+
+    row2.appendChild(saveBtn);
+    row2.appendChild(cancelBtn);
+
+    form.appendChild(row1);
+    form.appendChild(row2);
+
+    textInput.addEventListener('keydown', (e) => {
+      if(e.key === 'Enter'){
+        e.preventDefault();
+        commitEdit(task.id, textInput.value, dateInputEl.value);
+      } else if(e.key === 'Escape'){
+        e.preventDefault();
+        editingId = null;
+        render();
+      }
+    });
+
+    return form;
+  }
+
+  function commitEdit(id, text, date){
+    const trimmed = text.trim();
+    if(!trimmed) return;
+    updateTask(id, { text: trimmed, date: date || null });
+    editingId = null;
+  }
+
+  function promptDate(id, container, triggerEl){
+    triggerEl.remove();
+    const dateEl = document.createElement('input');
+    dateEl.type = 'date';
+    dateEl.className = 'inline-date-input';
+    dateEl.addEventListener('change', () => {
+      updateTask(id, { date: dateEl.value });
+    });
+    container.appendChild(dateEl);
+    dateEl.focus();
+  }
+
+  async function updateTask(id, patch){
+    const task = tasks.find(t => t.id === id);
+    if(!task) return;
+    Object.assign(task, patch);
+    if(supabaseEnabled){
+      const dbPatch = {};
+      if('text' in patch) dbPatch.text = patch.text;
+      if('date' in patch) dbPatch.date = patch.date;
+      const { error } = await supabaseClient.from('tasks').update(dbPatch).eq('id', id);
+      if(error){ setSyncUI('offline'); }
+      // el propio canal realtime dispara refetchTasks() y vuelve a pintar
+    } else {
+      saveLocalCache();
+      render();
+    }
+  }
+
+  async function addTask(text, date){
+    const trimmed = text.trim();
+    if(!trimmed) return;
+    const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    const task = {
+      id,
+      text: trimmed,
+      date: date || null,
+      createdAt: Date.now()
+    };
+    if(supabaseEnabled){
+      const { error } = await supabaseClient.from('tasks').insert({
+        id: task.id, text: task.text, date: task.date, created_at: task.createdAt
+      });
+      if(error){ setSyncUI('offline'); }
+    } else {
+      tasks.push(task);
+      saveLocalCache();
+      render();
+    }
+  }
+
+  function removeTask(id){
+    const li = list.querySelector(`[data-id="${id}"]`);
+    const finish = async () => {
+      if(supabaseEnabled){
+        const { error } = await supabaseClient.from('tasks').delete().eq('id', id);
+        if(error){ setSyncUI('offline'); }
+      } else {
+        tasks = tasks.filter(t => t.id !== id);
+        saveLocalCache();
+        render();
+      }
+    };
+    if(li && !reduceMotion){
+      li.classList.add('hiding');
+      setTimeout(finish, 380);
+    } else {
+      finish();
+    }
+  }
+
+  function handleAdd(){
+    addTask(input.value, dateInput.value);
+    input.value = '';
+    dateInput.value = '';
+    input.focus();
+  }
+
+  input.addEventListener('keydown', (e) => {
+    if(e.key === 'Enter'){
+      e.preventDefault();
+      handleAdd();
+    }
+  });
+
+  addBtn.addEventListener('click', handleAdd);
+
+  loadLocalCache();
+  render();
+  initSupabase();
+})();
+</script>
+</body>
+</html>
