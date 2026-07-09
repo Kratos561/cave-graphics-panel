@@ -6,18 +6,19 @@
   <title>Cave Graphics | Panel</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
   <script src="https://unpkg.com/lucide@latest"></script>
   <style>
     :root {
-      --ink: #101114;
-      --panel: #17191f;
-      --panel-2: #20232b;
-      --line: #343844;
-      --line-soft: #282b34;
+      --ink: #0c0e13;
+      --panel: #15181f;
+      --panel-2: #1d2029;
+      --panel-3: #232734;
+      --line: #353a48;
+      --line-soft: #262a35;
       --text: #f5f1e8;
       --muted: #a7a495;
-      --faint: #77756c;
+      --faint: #74716a;
       --teal: #4dd4c6;
       --teal-soft: #173936;
       --amber: #ffbc58;
@@ -26,8 +27,10 @@
       --rose-soft: #3b1c25;
       --green: #8bd676;
       --green-soft: #21341d;
-      --shadow: 0 24px 80px rgba(0, 0, 0, 0.34);
-      --radius: 8px;
+      --shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
+      --shadow-sm: 0 8px 24px rgba(0, 0, 0, 0.28);
+      --radius: 10px;
+      --radius-sm: 7px;
     }
 
     * { box-sizing: border-box; }
@@ -40,19 +43,21 @@
       color: var(--text);
       font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       background:
-        linear-gradient(rgba(245, 241, 232, 0.025) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(245, 241, 232, 0.025) 1px, transparent 1px),
-        linear-gradient(145deg, #111217 0%, #17191e 48%, #121315 100%);
-      background-size: 42px 42px, 42px 42px, auto;
+        radial-gradient(900px 500px at 12% -8%, rgba(77, 212, 198, 0.07), transparent 60%),
+        radial-gradient(800px 500px at 92% 4%, rgba(255, 188, 88, 0.05), transparent 55%),
+        linear-gradient(rgba(245, 241, 232, 0.022) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(245, 241, 232, 0.022) 1px, transparent 1px),
+        linear-gradient(155deg, #0d0f15 0%, #15171e 48%, #0e1015 100%);
+      background-size: auto, auto, 44px 44px, 44px 44px, auto;
       -webkit-font-smoothing: antialiased;
     }
 
     button, input { font: inherit; }
 
     .app {
-      width: min(1180px, calc(100% - 32px));
+      width: min(1200px, calc(100% - 32px));
       margin: 0 auto;
-      padding: 34px 0 54px;
+      padding: 36px 0 60px;
     }
 
     .topbar {
@@ -60,44 +65,65 @@
       justify-content: space-between;
       align-items: center;
       gap: 18px;
-      margin-bottom: 28px;
+      margin-bottom: 30px;
     }
 
     .brand {
       display: flex;
       align-items: center;
-      gap: 14px;
+      gap: 15px;
       min-width: 0;
     }
 
     .mark {
-      width: 48px;
-      height: 48px;
+      width: 52px;
+      height: 52px;
       border: 1px solid var(--line);
       border-radius: var(--radius);
       display: grid;
       place-items: center;
       background:
-        linear-gradient(135deg, rgba(77, 212, 198, 0.14), transparent 46%),
+        linear-gradient(135deg, rgba(77, 212, 198, 0.16), transparent 50%),
         var(--panel);
-      box-shadow: inset 0 1px rgba(255, 255, 255, 0.04);
+      box-shadow: inset 0 1px rgba(255, 255, 255, 0.05), 0 6px 18px rgba(0, 0, 0, 0.25);
       flex: 0 0 auto;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .mark::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, transparent 40%, rgba(77, 212, 198, 0.1) 50%, transparent 60%);
+      animation: shimmer 4s ease-in-out infinite;
+    }
+
+    @keyframes shimmer {
+      0%, 100% { transform: translateX(-100%); }
+      50% { transform: translateX(100%); }
     }
 
     .mark span {
       font-family: "JetBrains Mono", monospace;
-      font-size: 15px;
+      font-size: 16px;
       font-weight: 700;
       letter-spacing: 0;
       color: var(--teal);
+      position: relative;
+      z-index: 1;
     }
 
     h1 {
-      font-size: clamp(28px, 5vw, 48px);
-      line-height: 0.95;
+      font-size: clamp(28px, 5vw, 46px);
+      line-height: 0.96;
       margin: 0;
-      letter-spacing: 0;
-      font-weight: 800;
+      letter-spacing: -0.02em;
+      font-weight: 900;
+      background: linear-gradient(135deg, var(--text) 0%, #d8d4c8 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
     }
 
     .subtitle {
@@ -110,14 +136,16 @@
       display: flex;
       align-items: center;
       gap: 9px;
-      padding: 9px 12px;
+      padding: 9px 14px;
       border: 1px solid var(--line);
       border-radius: 999px;
-      background: rgba(23, 25, 31, 0.82);
+      background: rgba(21, 24, 31, 0.85);
+      backdrop-filter: blur(8px);
       color: var(--muted);
       font-family: "JetBrains Mono", monospace;
       font-size: 12px;
       white-space: nowrap;
+      transition: border-color 0.2s ease;
     }
 
     .status-dot {
@@ -125,41 +153,61 @@
       height: 8px;
       border-radius: 50%;
       background: var(--faint);
+      transition: all 0.2s ease;
     }
 
     .status.live .status-dot {
       background: var(--green);
       box-shadow: 0 0 0 5px rgba(139, 214, 118, 0.12), 0 0 14px rgba(139, 214, 118, 0.65);
+      animation: pulse 2.4s ease-in-out infinite;
     }
+
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 5px rgba(139, 214, 118, 0.12), 0 0 14px rgba(139, 214, 118, 0.65); }
+      50% { box-shadow: 0 0 0 7px rgba(139, 214, 118, 0.06), 0 0 10px rgba(139, 214, 118, 0.4); }
+    }
+
+    .status.live { border-color: rgba(139, 214, 118, 0.3); }
 
     .status.syncing .status-dot {
       background: var(--amber);
       box-shadow: 0 0 0 5px rgba(255, 188, 88, 0.12);
+      animation: spin-pulse 1s ease-in-out infinite;
     }
+
+    @keyframes spin-pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.3); }
+    }
+
+    .status.syncing { border-color: rgba(255, 188, 88, 0.3); }
 
     .status.offline .status-dot {
       background: var(--rose);
       box-shadow: 0 0 0 5px rgba(255, 111, 141, 0.12);
     }
 
+    .status.offline { border-color: rgba(255, 111, 141, 0.3); }
+
     .layout {
       display: grid;
-      grid-template-columns: 360px minmax(0, 1fr);
-      gap: 20px;
+      grid-template-columns: 370px minmax(0, 1fr);
+      gap: 22px;
       align-items: start;
     }
 
     .panel {
       border: 1px solid var(--line);
       border-radius: var(--radius);
-      background: rgba(23, 25, 31, 0.9);
+      background: rgba(21, 24, 31, 0.92);
+      backdrop-filter: blur(10px);
       box-shadow: var(--shadow);
     }
 
     .composer {
       position: sticky;
       top: 18px;
-      padding: 18px;
+      padding: 20px;
     }
 
     .panel-title {
@@ -167,22 +215,23 @@
       align-items: center;
       justify-content: space-between;
       gap: 12px;
-      margin-bottom: 18px;
+      margin-bottom: 20px;
     }
 
     .panel-title h2 {
       margin: 0;
-      font-size: 14px;
+      font-size: 13px;
       text-transform: uppercase;
-      letter-spacing: 0.08em;
+      letter-spacing: 0.1em;
       color: var(--text);
+      font-weight: 700;
     }
 
     .mini-count {
       font-family: "JetBrains Mono", monospace;
       color: var(--teal);
       font-size: 12px;
-      padding: 4px 8px;
+      padding: 4px 9px;
       border-radius: 999px;
       border: 1px solid rgba(77, 212, 198, 0.35);
       background: rgba(77, 212, 198, 0.08);
@@ -196,22 +245,23 @@
 
     label {
       color: var(--muted);
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.08em;
+      letter-spacing: 0.1em;
     }
 
     .input-wrap {
       display: flex;
       align-items: center;
       gap: 10px;
-      min-height: 46px;
+      min-height: 48px;
       border: 1px solid var(--line);
-      border-radius: var(--radius);
-      background: #111217;
+      border-radius: var(--radius-sm);
+      background: #0e1015;
       color: var(--muted);
-      padding: 0 12px;
+      padding: 0 13px;
+      transition: border-color 0.18s ease, box-shadow 0.18s ease;
     }
 
     .input-wrap:focus-within {
@@ -228,7 +278,7 @@
       outline: 0;
       background: transparent;
       color: var(--text);
-      padding: 12px 0;
+      padding: 13px 0;
     }
 
     input::placeholder { color: var(--faint); }
@@ -236,25 +286,28 @@
 
     .primary-btn {
       width: 100%;
-      min-height: 46px;
+      min-height: 48px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
       gap: 9px;
       border: 1px solid rgba(77, 212, 198, 0.42);
-      border-radius: var(--radius);
+      border-radius: var(--radius-sm);
       color: #071412;
-      background: var(--teal);
+      background: linear-gradient(135deg, var(--teal) 0%, #3ec4b6 100%);
       font-weight: 800;
       cursor: pointer;
       transition: transform 0.16s ease, box-shadow 0.16s ease, filter 0.16s ease;
+      box-shadow: 0 4px 14px rgba(77, 212, 198, 0.2);
     }
 
     .primary-btn:hover {
       transform: translateY(-1px);
-      box-shadow: 0 14px 30px rgba(77, 212, 198, 0.2);
-      filter: saturate(1.08);
+      box-shadow: 0 14px 30px rgba(77, 212, 198, 0.28);
+      filter: saturate(1.1);
     }
+
+    .primary-btn:active { transform: translateY(0); }
 
     .primary-btn:focus-visible,
     .icon-btn:focus-visible,
@@ -271,21 +324,28 @@
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 10px;
-      margin-top: 18px;
+      margin-top: 20px;
     }
 
     .metric {
       border: 1px solid var(--line-soft);
-      border-radius: var(--radius);
+      border-radius: var(--radius-sm);
       background: rgba(255, 255, 255, 0.025);
-      padding: 12px;
+      padding: 13px;
+      transition: border-color 0.18s ease, background 0.18s ease;
+    }
+
+    .metric:hover {
+      border-color: var(--line);
+      background: rgba(255, 255, 255, 0.04);
     }
 
     .metric strong {
       display: block;
-      font-size: 24px;
+      font-size: 26px;
       line-height: 1;
       color: var(--text);
+      font-weight: 800;
     }
 
     .metric span {
@@ -297,6 +357,9 @@
       letter-spacing: 0.08em;
     }
 
+    .metric.due-overdue strong { color: var(--rose); }
+    .metric.due-today strong { color: var(--amber); }
+
     .board {
       min-width: 0;
     }
@@ -305,34 +368,52 @@
       display: grid;
       grid-template-columns: minmax(0, 1fr) auto;
       gap: 14px;
-      padding: 16px;
+      padding: 18px;
       border-bottom: 1px solid var(--line);
       align-items: center;
     }
 
-    .search {
-      margin: 0;
-    }
+    .search { margin: 0; }
 
     .ghost-btn {
-      min-height: 42px;
+      min-height: 44px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
       gap: 8px;
       border: 1px solid var(--line);
-      border-radius: var(--radius);
+      border-radius: var(--radius-sm);
       background: var(--panel-2);
       color: var(--muted);
-      padding: 0 12px;
+      padding: 0 13px;
       cursor: pointer;
+      transition: color 0.16s ease, border-color 0.16s ease, background 0.16s ease, transform 0.16s ease;
     }
 
     .ghost-btn:hover {
       color: var(--text);
       border-color: var(--amber);
       background: var(--amber-soft);
+      transform: translateY(-1px);
     }
+
+    .ghost-btn:active { transform: translateY(0); }
+
+    .board-foot {
+      padding: 12px 18px;
+      border-top: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      color: var(--faint);
+      font-size: 11px;
+      font-family: "JetBrains Mono", monospace;
+    }
+
+    .board-foot .last-sync { display: flex; align-items: center; gap: 6px; }
+    .board-foot .last-sync i { width: 13px; height: 13px; }
+    .board-foot .auto-tag { color: var(--teal); }
 
     .task-list {
       list-style: none;
@@ -344,42 +425,51 @@
       display: grid;
       grid-template-columns: minmax(0, 1fr) auto;
       gap: 16px;
-      padding: 16px;
+      padding: 16px 18px;
       border-bottom: 1px solid var(--line-soft);
-      background: rgba(23, 25, 31, 0.5);
+      background: rgba(21, 24, 31, 0.5);
       transition: background 0.16s ease, border-color 0.16s ease;
+      animation: row-in 0.3s ease both;
+    }
+
+    @keyframes row-in {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
     }
 
     .task-row:hover,
     .task-row:focus-within {
-      background: rgba(32, 35, 43, 0.86);
+      background: rgba(29, 32, 41, 0.9);
       border-color: rgba(77, 212, 198, 0.26);
     }
 
+    .task-row:last-child { border-bottom: 0; }
+
     .task-main {
       display: grid;
-      grid-template-columns: 42px minmax(0, 1fr);
+      grid-template-columns: 44px minmax(0, 1fr);
       gap: 14px;
       min-width: 0;
     }
 
     .task-number {
-      width: 42px;
-      height: 42px;
+      width: 44px;
+      height: 44px;
       display: grid;
       place-items: center;
       border: 1px solid var(--line);
-      border-radius: var(--radius);
+      border-radius: var(--radius-sm);
       color: var(--faint);
       font-family: "JetBrains Mono", monospace;
       font-size: 12px;
-      background: #111217;
+      font-weight: 700;
+      background: #0e1015;
     }
 
     .task-copy {
       min-width: 0;
       display: grid;
-      gap: 7px;
+      gap: 8px;
     }
 
     .task-text {
@@ -394,7 +484,7 @@
     .meta {
       display: flex;
       flex-wrap: wrap;
-      gap: 8px;
+      gap: 7px;
       align-items: center;
       color: var(--faint);
       font-size: 12px;
@@ -403,18 +493,18 @@
     .pill {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
+      gap: 5px;
       min-height: 26px;
       border-radius: 999px;
       border: 1px solid var(--line);
-      padding: 0 9px;
+      padding: 0 10px;
       color: var(--muted);
-      background: #111217;
+      background: #0e1015;
       font-size: 12px;
       white-space: nowrap;
     }
 
-    .pill i { width: 14px; height: 14px; }
+    .pill i { width: 13px; height: 13px; }
     .pill.today { border-color: rgba(255, 188, 88, 0.5); color: var(--amber); background: var(--amber-soft); }
     .pill.overdue { border-color: rgba(255, 111, 141, 0.5); color: var(--rose); background: var(--rose-soft); }
     .pill.upcoming { border-color: rgba(77, 212, 198, 0.45); color: var(--teal); background: var(--teal-soft); }
@@ -426,11 +516,11 @@
     }
 
     .icon-btn {
-      width: 38px;
-      height: 38px;
+      width: 40px;
+      height: 40px;
       border: 1px solid var(--line);
-      border-radius: var(--radius);
-      background: #111217;
+      border-radius: var(--radius-sm);
+      background: #0e1015;
       color: var(--muted);
       display: grid;
       place-items: center;
@@ -478,58 +568,99 @@
       flex-wrap: wrap;
     }
 
-    .save-btn { color: var(--teal); }
+    .save-btn { color: var(--teal); border-color: rgba(77, 212, 198, 0.4); }
     .cancel-btn { color: var(--rose); }
+    .cancel-btn:hover { border-color: rgba(255, 111, 141, 0.5); background: var(--rose-soft); }
 
     .empty {
-      padding: 56px 18px;
+      padding: 64px 18px;
       text-align: center;
       color: var(--faint);
     }
 
     .empty i {
-      width: 36px;
-      height: 36px;
+      width: 40px;
+      height: 40px;
       color: var(--teal);
-      margin-bottom: 12px;
+      margin-bottom: 14px;
+      opacity: 0.7;
     }
 
     .empty strong {
       display: block;
       color: var(--text);
-      margin-bottom: 5px;
+      margin-bottom: 6px;
+      font-size: 16px;
     }
+
+    .empty span { font-size: 13px; }
+
+    .skeleton-row {
+      padding: 16px 18px;
+      border-bottom: 1px solid var(--line-soft);
+      display: grid;
+      grid-template-columns: 44px 1fr;
+      gap: 14px;
+      align-items: center;
+    }
+
+    .skeleton-block {
+      background: linear-gradient(90deg, var(--panel-2) 0%, var(--panel-3) 50%, var(--panel-2) 100%);
+      background-size: 200% 100%;
+      animation: skeleton 1.4s ease-in-out infinite;
+      border-radius: var(--radius-sm);
+    }
+
+    @keyframes skeleton {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    .skeleton-row .sk-num { width: 44px; height: 44px; }
+    .skeleton-row .sk-line { height: 14px; border-radius: 4px; }
+    .skeleton-row .sk-line.w60 { width: 60%; margin-bottom: 8px; }
+    .skeleton-row .sk-line.w30 { width: 30%; }
 
     .toast {
       position: fixed;
       left: 50%;
-      bottom: 22px;
+      bottom: 24px;
       transform: translateX(-50%) translateY(18px);
       opacity: 0;
       pointer-events: none;
       border: 1px solid var(--line);
       border-radius: var(--radius);
-      background: #111217;
+      background: #0e1015;
       color: var(--text);
-      padding: 11px 14px;
+      padding: 12px 16px;
       box-shadow: var(--shadow);
       transition: opacity 0.18s ease, transform 0.18s ease;
       z-index: 10;
       max-width: calc(100% - 32px);
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 9px;
     }
+
+    .toast i { width: 16px; height: 16px; flex: 0 0 auto; }
+    .toast.ok { border-color: rgba(139, 214, 118, 0.4); }
+    .toast.ok i { color: var(--green); }
+    .toast.err { border-color: rgba(255, 111, 141, 0.4); }
+    .toast.err i { color: var(--rose); }
 
     .toast.show {
       opacity: 1;
       transform: translateX(-50%) translateY(0);
     }
 
-    @media (max-width: 880px) {
+    @media (max-width: 900px) {
       .layout { grid-template-columns: 1fr; }
       .composer { position: static; }
     }
 
     @media (max-width: 620px) {
-      .app { width: min(100% - 22px, 1180px); padding-top: 22px; }
+      .app { width: min(100% - 22px, 1200px); padding-top: 22px; }
       .topbar { align-items: flex-start; flex-direction: column; }
       .status { width: 100%; justify-content: center; }
       .board-head { grid-template-columns: 1fr; }
@@ -548,6 +679,7 @@
       *, *::before, *::after {
         transition-duration: 0.01ms !important;
         animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
         scroll-behavior: auto !important;
       }
     }
@@ -565,7 +697,7 @@
       </div>
       <div class="status" id="sync-status" role="status" aria-live="polite">
         <span class="status-dot"></span>
-        <span id="sync-text">Local</span>
+        <span id="sync-text">Conectando</span>
       </div>
     </header>
 
@@ -600,11 +732,11 @@
         </form>
 
         <div class="metrics" aria-label="Resumen">
-          <div class="metric">
+          <div class="metric" id="metric-today">
             <strong id="today-count">0</strong>
             <span>Hoy</span>
           </div>
-          <div class="metric">
+          <div class="metric" id="metric-overdue">
             <strong id="overdue-count">0</strong>
             <span>Vencidas</span>
           </div>
@@ -626,6 +758,13 @@
           </button>
         </div>
         <ul class="task-list" id="task-list"></ul>
+        <div class="board-foot">
+          <span class="last-sync" id="last-sync">
+            <i data-lucide="refresh-cw"></i>
+            <span id="last-sync-text">Pendiente</span>
+          </span>
+          <span class="auto-tag">Sincronizacion automatica activa</span>
+        </div>
       </section>
     </div>
   </main>
@@ -637,8 +776,9 @@
     (() => {
       const STORAGE_KEY = "cave-graphics-panel-cache";
       const TABLE = "tasks";
-      const SUPABASE_URL = "https://owltcxzfbitmbynhwtvq.supabase.co";
-      const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im93bHRjeHpmYml0bWJ5bmh3dHZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM1Mzg2NTYsImV4cCI6MjA5OTExNDY1Nn0.Xf3F193KXHSH5lJkPoOfzlaeymRpK2AXPqofI07AYVs";
+      const SUPABASE_URL = "https://cgquvuclhkqxwebpgsdx.supabase.co";
+      const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNncXV2dWNsaGtxeHdlYnBnc2R4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MzE3MTgsImV4cCI6MjA5NzMwNzcxOH0.cbybLnhFO7DgKqlX_BlxJaIao8OJcqBnkPkhq6G9bNI";
+      const POLL_INTERVAL = 30000; // refresco automatico cada 30s como respaldo del realtime
 
       const els = {
         form: document.getElementById("task-form"),
@@ -652,21 +792,26 @@
         activeCount: document.getElementById("active-count"),
         todayCount: document.getElementById("today-count"),
         overdueCount: document.getElementById("overdue-count"),
+        metricToday: document.getElementById("metric-today"),
+        metricOverdue: document.getElementById("metric-overdue"),
+        lastSyncText: document.getElementById("last-sync-text"),
         toast: document.getElementById("toast")
       };
 
       const state = {
         client: null,
+        channel: null,
         tasks: [],
         editingId: null,
         query: "",
         refreshTimer: null,
-        toastTimer: null
+        pollTimer: null,
+        toastTimer: null,
+        lastSyncAt: 0,
+        booted: false
       };
 
-      function nowMs() {
-        return Date.now();
-      }
+      function nowMs() { return Date.now(); }
 
       function id() {
         if (crypto && crypto.randomUUID) return crypto.randomUUID();
@@ -701,7 +846,7 @@
       }
 
       function persist() {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(state.tasks));
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state.tasks)); } catch {}
       }
 
       function hydrate() {
@@ -718,11 +863,23 @@
         els.syncText.textContent = label;
       }
 
-      function showToast(message) {
-        els.toast.textContent = message;
-        els.toast.classList.add("show");
+      function showToast(message, kind = "") {
+        const iconName = kind === "ok" ? "check-circle" : kind === "err" ? "alert-circle" : "info";
+        els.toast.innerHTML = "";
+        const icon = document.createElement("i");
+        icon.setAttribute("data-lucide", iconName);
+        els.toast.appendChild(icon);
+        els.toast.appendChild(document.createTextNode(message));
+        els.toast.className = "toast show " + kind;
+        if (window.lucide) window.lucide.createIcons();
         clearTimeout(state.toastTimer);
         state.toastTimer = setTimeout(() => els.toast.classList.remove("show"), 2800);
+      }
+
+      function updateLastSync() {
+        state.lastSyncAt = nowMs();
+        const label = new Intl.DateTimeFormat("es", { hour: "2-digit", minute: "2-digit", second: "2-digit" }).format(new Date(state.lastSyncAt));
+        els.lastSyncText.textContent = "Actualizado a las " + label;
       }
 
       function sortTasks(tasks) {
@@ -777,7 +934,7 @@
 
       async function fetchLatest(source = "manual") {
         if (!state.client) return;
-        setStatus("syncing", "Sincronizando");
+        if (source !== "startup") setStatus("syncing", "Sincronizando");
         const { data, error } = await state.client
           .from(TABLE)
           .select("*")
@@ -785,19 +942,27 @@
 
         if (error) {
           setStatus("offline", "Sin conexion");
-          if (source === "manual") showToast("No se pudo actualizar desde Supabase");
+          if (source === "manual") showToast("No se pudo actualizar desde Supabase", "err");
           return;
         }
 
         state.tasks = sortTasks((data || []).map(normalize).filter(task => task.text));
         persist();
         render();
+        updateLastSync();
         setStatus("live", "En vivo");
       }
 
       function scheduleRefresh() {
         clearTimeout(state.refreshTimer);
         state.refreshTimer = setTimeout(() => fetchLatest("realtime"), 260);
+      }
+
+      function startPolling() {
+        clearInterval(state.pollTimer);
+        state.pollTimer = setInterval(() => {
+          if (state.client && !document.hidden) fetchLatest("poll");
+        }, POLL_INTERVAL);
       }
 
       async function connect() {
@@ -807,27 +972,35 @@
         }
 
         state.client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-          realtime: { params: { eventsPerSecond: 8 } }
+          realtime: { params: { eventsPerSecond: 8 } },
+          auth: { persistSession: false }
         });
 
         await fetchLatest("startup");
 
-        state.client
-          .channel("public:tasks")
-          .on("postgres_changes", { event: "*", schema: "public", table: TABLE }, payload => {
-            if (payload.eventType === "DELETE") {
-              removeLocal(String(payload.old.id));
-            } else if (payload.new) {
-              upsertLocal(payload.new);
-            }
-            scheduleRefresh();
-          })
-          .subscribe(status => {
-            if (status === "SUBSCRIBED") setStatus("live", "En vivo");
-            if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
-              setStatus("offline", "Sin conexion");
-            }
-          });
+        try {
+          state.channel = state.client
+            .channel("public:tasks")
+            .on("postgres_changes", { event: "*", schema: "public", table: TABLE }, payload => {
+              if (payload.eventType === "DELETE") {
+                removeLocal(String(payload.old.id));
+              } else if (payload.new) {
+                upsertLocal(payload.new);
+              }
+              scheduleRefresh();
+            })
+            .subscribe(status => {
+              if (status === "SUBSCRIBED") {
+                setStatus("live", "En vivo");
+                startPolling();
+              }
+              if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
+                setStatus("offline", "Sin conexion");
+              }
+            });
+        } catch {
+          setStatus("offline", "Sin conexion");
+        }
       }
 
       async function insertRemote(task) {
@@ -840,7 +1013,7 @@
         }
         if (result.error) {
           setStatus("offline", "Sin conexion");
-          showToast("No se pudo guardar en Supabase");
+          showToast("No se pudo guardar en Supabase", "err");
           return false;
         }
         return true;
@@ -856,7 +1029,7 @@
         }
         if (result.error) {
           setStatus("offline", "Sin conexion");
-          showToast("No se pudo editar en Supabase");
+          showToast("No se pudo editar en Supabase", "err");
           return false;
         }
         return true;
@@ -867,7 +1040,7 @@
         const { error } = await state.client.from(TABLE).delete().eq("id", taskId);
         if (error) {
           setStatus("offline", "Sin conexion");
-          showToast("No se pudo quitar en Supabase");
+          showToast("No se pudo quitar en Supabase", "err");
           return false;
         }
         return true;
@@ -891,7 +1064,8 @@
         els.input.focus();
 
         const saved = await insertRemote(task);
-        if (!saved && !state.client) showToast("Guardado localmente");
+        if (saved) showToast("Tarea agregada", "ok");
+        else if (!state.client) showToast("Guardado localmente");
       }
 
       async function commitEdit(taskId, text, date) {
@@ -906,12 +1080,14 @@
         state.editingId = null;
         render();
 
-        await updateRemote(taskId, patch);
+        const saved = await updateRemote(taskId, patch);
+        if (saved) showToast("Tarea actualizada", "ok");
       }
 
       async function completeTask(taskId) {
         removeLocal(taskId);
-        await deleteRemote(taskId);
+        const saved = await deleteRemote(taskId);
+        if (saved) showToast("Tarea completada", "ok");
       }
 
       function filteredTasks() {
@@ -935,6 +1111,8 @@
         els.activeCount.textContent = total + (total === 1 ? " activa" : " activas");
         els.todayCount.textContent = today;
         els.overdueCount.textContent = overdue;
+        els.metricToday.className = "metric" + (today > 0 ? " due-today" : "");
+        els.metricOverdue.className = "metric" + (overdue > 0 ? " due-overdue" : "");
       }
 
       function makeIcon(name) {
@@ -1011,6 +1189,7 @@
         const li = document.createElement("li");
         li.className = "task-row";
         li.dataset.id = task.id;
+        li.style.animationDelay = Math.min(index * 35, 350) + "ms";
 
         const main = document.createElement("div");
         main.className = "task-main";
@@ -1054,14 +1233,6 @@
         const actions = document.createElement("div");
         actions.className = "task-actions";
 
-        const complete = document.createElement("button");
-        complete.className = "icon-btn complete-btn";
-        complete.type = "button";
-        complete.title = "Quitar";
-        complete.setAttribute("aria-label", "Quitar " + task.text);
-        complete.appendChild(makeIcon("circle-check"));
-        complete.addEventListener("click", () => completeTask(task.id));
-
         const edit = document.createElement("button");
         edit.className = "icon-btn edit-btn";
         edit.type = "button";
@@ -1073,9 +1244,27 @@
           render();
         });
 
-        actions.append(complete, edit);
+        const complete = document.createElement("button");
+        complete.className = "icon-btn complete-btn";
+        complete.type = "button";
+        complete.title = "Completar y quitar";
+        complete.setAttribute("aria-label", "Completar " + task.text);
+        complete.appendChild(makeIcon("circle-check"));
+        complete.addEventListener("click", () => completeTask(task.id));
+
+        actions.append(edit, complete);
         li.append(main, actions);
         return li;
+      }
+
+      function renderSkeleton() {
+        els.list.innerHTML = "";
+        for (let i = 0; i < 3; i++) {
+          const row = document.createElement("li");
+          row.className = "skeleton-row";
+          row.innerHTML = '<div class="skeleton-block sk-num"></div><div><div class="skeleton-block sk-line w60"></div><div class="skeleton-block sk-line w30"></div></div>';
+          els.list.appendChild(row);
+        }
       }
 
       function render() {
@@ -1120,6 +1309,7 @@
 
       hydrate();
       render();
+      if (!state.tasks.length) renderSkeleton();
       connect();
     })();
   </script>
