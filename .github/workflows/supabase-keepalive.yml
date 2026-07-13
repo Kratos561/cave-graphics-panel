@@ -1,38 +1,95 @@
 name: Supabase Keep-Alive
 
-# Objetivo: hacer una consulta REAL a la base de datos cada 3 dias,
-# muy por debajo del limite de 7 dias de inactividad de Supabase Free,
-# para que el proyecto nunca se pause. Las credenciales son la anon key
-# publica (ya expuesta en el front-end) y no requieren GitHub Secrets.
+# Objetivo: que el proyecto Supabase Free NUNCA se pause (limite de 7 dias
+# de inactividad). Para ello hace una consulta + escritura REAL a la tabla
+# tasks todos los dias, con reintentos ante fallos transitorios.
+#
+# Frecuencia: DIARIA. Un ping al dia mantiene el contador de inactividad
+# siempre en <=24h, muy por debajo del limite de 7 dias. Si un dia el cron
+# no correra por una caida de GitHub Actions, todavia quedarian 6 dias de
+# margen antes del riesgo real de pausa.
+#
+# Las credenciales usadas son la anon key publica del proyecto, que ya vive
+# en el front-end (index.html). No exponen nada nuevo.
 
 on:
   schedule:
-    # Corre a las 12:00 UTC cada 3 dias. GitHub puede retrasar el cron
-    # unos minutos bajo carga, pero nunca lo suficiente para acercarse
-    # a los 7 dias — el margen es amplio a proposito.
-    - cron: '0 12 */3 * *'
+    # Diario a las 06:00 UTC. Hora temprana para minimizar colisiones con
+    # picos de carga de GitHub Actions (suelen ser por la tarde UTC).
+    - cron: '0 6 * * *'
   workflow_dispatch: {}
 
 jobs:
   ping-supabase:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
-      - name: Ping a la tabla tasks (lectura real)
+      - name: Ping + escritura real con reintentos
+        env:
+          SUPABASE_URL: https://cgquvuclhkqxwebpgsdx.supabase.co
+          SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNncXV2dWNsaGtxeHdlYnBnc2R4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MzE3MTgsImV4cCI6MjA5NzMwNzcxOH0.cbybLnhFO7DgKqlX_BlxJaIao8OJcqBnkPkhq6G9bNI
+          PROBE_ID: keepalive-probe
         run: |
-          SUPABASE_URL="https://cgquvuclhkqxwebpgsdx.supabase.co"
-          SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNncXV2dWNsaGtxeHdlYnBnc2R4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MzE3MTgsImV4cCI6MjA5NzMwNzcxOH0.cbybLnhFO7DgKqlX_BlxJaIao8OJcqBnkPkhq6G9bNI"
+          set -euo pipefail
 
-          HTTP_CODE=$(curl -s -o /tmp/response.json -w "%{http_code}" \
-            "${SUPABASE_URL}/rest/v1/tasks?select=id&limit=1" \
-            -H "apikey: ${SUPABASE_ANON_KEY}" \
-            -H "Authorization: Bearer ${SUPABASE_ANON_KEY}")
+          MAX_ATTEMPTS=4
+          attempt=0
+          success=0
 
-          echo "Codigo de respuesta: $HTTP_CODE"
-          cat /tmp/response.json
+          while [ $attempt -lt $MAX_ATTEMPTS ]; do
+            attempt=$((attempt + 1))
+            echo "--- Intento $attempt de $MAX_ATTEMPTS ---"
 
-          if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
-            echo "✅ Ping exitoso — el proyecto sigue activo."
-          else
-            echo "⚠️ El ping no devolvio un codigo 2xx. Revisa el proyecto en Supabase."
+            # 1) Lectura real de la tabla (reinicia el contador de inactividad).
+            READ_CODE=$(curl -s -o /tmp/read.json -w "%{http_code}" --max-time 25 \
+              "${SUPABASE_URL}/rest/v1/tasks?select=id&limit=1" \
+              -H "apikey: ${SUPABASE_ANON_KEY}" \
+              -H "Authorization: Bearer ${SUPABASE_ANON_KEY}")
+            echo "Lectura -> HTTP $READ_CODE"
+            cat /tmp/read.json; echo
+
+            # 2) Escritura ligera: upsert de una fila marcadora. Garantiza
+            #    actividad de escritura aunque Supabase cambiara la politica
+            #    de que cuenta como "actividad".
+            NOW_MS=$(($(date +%s) * 1000))
+            WRITE_CODE=$(curl -s -o /tmp/write.json -w "%{http_code}" --max-time 25 \
+              -X POST "${SUPABASE_URL}/rest/v1/tasks" \
+              -H "apikey: ${SUPABASE_ANON_KEY}" \
+              -H "Authorization: Bearer ${SUPABASE_ANON_KEY}" \
+              -H "Content-Type: application/json" \
+              -H "Prefer: resolution=merge-duplicates,return=minimal" \
+              -d "{\"id\":\"${PROBE_ID}\",\"text\":\"keepalive\",\"created_at\":${NOW_MS},\"updated_at\":${NOW_MS}}")
+            echo "Escritura (upsert) -> HTTP $WRITE_CODE"
+            cat /tmp/write.json; echo
+
+            # 3) Limpieza: borrar la fila marcadora para no dejar basura.
+            DELETE_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 25 \
+              -X DELETE "${SUPABASE_URL}/rest/v1/tasks?id=eq.${PROBE_ID}" \
+              -H "apikey: ${SUPABASE_ANON_KEY}" \
+              -H "Authorization: Bearer ${SUPABASE_ANON_KEY}")
+            echo "Limpieza (delete) -> HTTP $DELETE_CODE"
+
+            # Exito si la lectura devolvio 2xx (la escritura/borrado son
+            # best-effort: si fallaran por un blip pero la lectura ok, el
+            # proyecto esta activo y el contador ya se reinicio).
+            if [ "$READ_CODE" -ge 200 ] && [ "$READ_CODE" -lt 300 ]; then
+              echo "✅ Intento $attempt exitoso — el proyecto esta activo."
+              success=1
+              break
+            fi
+
+            if [ $attempt -lt $MAX_ATTEMPTS ]; then
+              # Backoff exponencial: 30s, 60s, 120s.
+              wait=$((30 * (1 << (attempt - 1))))
+              echo "⏳ Reintentando en ${wait}s..."
+              sleep $wait
+            fi
+          done
+
+          if [ $success -ne 1 ]; then
+            echo "❌ Todos los intentos fallaron. El proyecto podria estar pausado o caido."
+            echo "    Accion manual: entrar a https://supabase.com/dashboard/project/cgquvuclhkqxwebpgsdx"
+            echo "    y pulsar 'Restore project' si esta pausado."
             exit 1
           fi
