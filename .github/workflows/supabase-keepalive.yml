@@ -1,0 +1,38 @@
+name: Supabase Keep-Alive
+
+# Objetivo: hacer una consulta REAL a la base de datos cada 3 dias,
+# muy por debajo del limite de 7 dias de inactividad de Supabase Free,
+# para que el proyecto nunca se pause. Las credenciales son la anon key
+# publica (ya expuesta en el front-end) y no requieren GitHub Secrets.
+
+on:
+  schedule:
+    # Corre a las 12:00 UTC cada 3 dias. GitHub puede retrasar el cron
+    # unos minutos bajo carga, pero nunca lo suficiente para acercarse
+    # a los 7 dias — el margen es amplio a proposito.
+    - cron: '0 12 */3 * *'
+  workflow_dispatch: {}
+
+jobs:
+  ping-supabase:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping a la tabla tasks (lectura real)
+        run: |
+          SUPABASE_URL="https://cgquvuclhkqxwebpgsdx.supabase.co"
+          SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNncXV2dWNsaGtxeHdlYnBnc2R4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MzE3MTgsImV4cCI6MjA5NzMwNzcxOH0.cbybLnhFO7DgKqlX_BlxJaIao8OJcqBnkPkhq6G9bNI"
+
+          HTTP_CODE=$(curl -s -o /tmp/response.json -w "%{http_code}" \
+            "${SUPABASE_URL}/rest/v1/tasks?select=id&limit=1" \
+            -H "apikey: ${SUPABASE_ANON_KEY}" \
+            -H "Authorization: Bearer ${SUPABASE_ANON_KEY}")
+
+          echo "Codigo de respuesta: $HTTP_CODE"
+          cat /tmp/response.json
+
+          if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
+            echo "✅ Ping exitoso — el proyecto sigue activo."
+          else
+            echo "⚠️ El ping no devolvio un codigo 2xx. Revisa el proyecto en Supabase."
+            exit 1
+          fi
