@@ -1,0 +1,38 @@
+name: Repo Activity Keeper
+
+# Objetivo: evitar que GitHub desactive los workflows programados.
+# GitHub desactiva automaticamente los cron tras 60 dias sin pushes al
+# repo. Este workflow hace un commit auto-referencial cada 28 dias para
+# mantener el repo "vivo" y los cron corriendo.
+#
+# No toca ningun archivo funcional: solo actualiza un timestamp en un
+# archivo oculto .keepalive-timestamp que no afecta a la web ni a la BD.
+
+on:
+  schedule:
+    # Cada 28 dias a las 03:00 UTC (corto margen vs los 60 dias de GitHub).
+    - cron: '0 3 */28 * *'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  bump-timestamp:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Actualizar timestamp
+        run: |
+          date -u +"%Y-%m-%dT%H:%M:%SZ" > .keepalive-timestamp
+          echo "Timestamp actualizado a: $(cat .keepalive-timestamp)"
+
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .keepalive-timestamp
+          git commit -m "chore(keepalive): renovar actividad del repo [skip ci]" || echo "Nada que commitear"
+          git push
