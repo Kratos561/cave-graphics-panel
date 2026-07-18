@@ -1,0 +1,7 @@
+# Local export and request payloads; they can contain stale application snapshots.
+*_payload.json
+q_schema.json
+q_alter.json
+
+# Local artifacts
+output/
