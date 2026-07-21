@@ -1,10 +1,12 @@
 name: Supabase Keep-Alive
 
 # Objetivo: que el proyecto Supabase Free NUNCA se pause (limite de 7 dias
-# de inactividad) Y purgar la papelera de tareas eliminadas hace mas de 2 dias.
+# de inactividad).
 #
-# Frecuencia: DIARIA. Un ping al dia mantiene el contador de inactividad
-# siempre en <=24h, muy por debajo del limite de 7 dias.
+# Frecuencia: DIARIA a las 06:00 UTC.
+#
+# Fase 0.1: Usa Secrets en vez de hardcodear la anon key.
+# Fase 1.4: Pinguea health_check (tabla publica) en vez de tasks (ahora protegida por RLS).
 
 on:
   schedule:
@@ -17,11 +19,10 @@ jobs:
     permissions:
       contents: read
     steps:
-      - name: Ping + escritura + purga de papelera
+      - name: Ping health_check
         env:
-          SUPABASE_URL: https://cgquvuclhkqxwebpgsdx.supabase.co
-          SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNncXV2dWNsaGtxeHdlYnBnc2R4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MzE3MTgsImV4cCI6MjA5NzMwNzcxOH0.cbybLnhFO7DgKqlX_BlxJaIao8OJcqBnkPkhq6G9bNI
-          PROBE_ID: keepalive-probe
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
           set -euo pipefail
 
@@ -33,40 +34,23 @@ jobs:
             attempt=$((attempt + 1))
             echo "--- Intento $attempt de $MAX_ATTEMPTS ---"
 
-            # 1) Lectura real de la tabla.
+            # 1) Lectura de health_check (tabla publica, no requiere auth)
             READ_CODE=$(curl -s -o /tmp/read.json -w "%{http_code}" --max-time 25 \
-              "${SUPABASE_URL}/rest/v1/tasks?select=id&limit=1" \
+              "${SUPABASE_URL}/rest/v1/health_check?select=id,pinged_at&limit=1" \
               -H "apikey: ${SUPABASE_ANON_KEY}" \
               -H "Authorization: Bearer ${SUPABASE_ANON_KEY}")
-            echo "Lectura -> HTTP $READ_CODE"
+            echo "Lectura health_check -> HTTP $READ_CODE"
             cat /tmp/read.json; echo
 
-            # 2) Escritura ligera: upsert de una fila marcadora.
-            NOW_MS=$(($(date +%s) * 1000))
+            # 2) Escritura: actualizar pinged_at para marcar actividad
             WRITE_CODE=$(curl -s -o /tmp/write.json -w "%{http_code}" --max-time 25 \
-              -X POST "${SUPABASE_URL}/rest/v1/tasks" \
+              -X PATCH "${SUPABASE_URL}/rest/v1/health_check?id=eq.ping" \
               -H "apikey: ${SUPABASE_ANON_KEY}" \
               -H "Authorization: Bearer ${SUPABASE_ANON_KEY}" \
               -H "Content-Type: application/json" \
-              -H "Prefer: resolution=merge-duplicates,return=minimal" \
-              -d "{\"id\":\"${PROBE_ID}\",\"text\":\"keepalive\",\"created_at\":${NOW_MS},\"updated_at\":${NOW_MS}}")
-            echo "Escritura (upsert) -> HTTP $WRITE_CODE"
-
-            # 3) Limpieza de la fila marcadora.
-            curl -s -o /dev/null -w "Limpieza (delete probe) -> HTTP %{http_code}\n" --max-time 25 \
-              -X DELETE "${SUPABASE_URL}/rest/v1/tasks?id=eq.${PROBE_ID}" \
-              -H "apikey: ${SUPABASE_ANON_KEY}" \
-              -H "Authorization: Bearer ${SUPABASE_ANON_KEY}"
-
-            # 4) PURGA DE PAPELERA: eliminar definitivamente las tareas
-            #    cuyo deleted_at es anterior a hace 2 dias (172800000 ms).
-            PURGE_BEFORE=$((NOW_MS - 172800000))
-            PURGE_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 30 \
-              -X DELETE "${SUPABASE_URL}/rest/v1/tasks?deleted_at=lt.${PURGE_BEFORE}" \
-              -H "apikey: ${SUPABASE_ANON_KEY}" \
-              -H "Authorization: Bearer ${SUPABASE_ANON_KEY}" \
-              -H "Prefer: return=representation")
-            echo "Purga papelera (deleted_at < $PURGE_BEFORE) -> HTTP $PURGE_CODE"
+              -H "Prefer: return=minimal" \
+              -d "{\"pinged_at\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"}")
+            echo "Escritura (update pinged_at) -> HTTP $WRITE_CODE"
 
             if [ "$READ_CODE" -ge 200 ] && [ "$READ_CODE" -lt 300 ]; then
               echo "✅ Intento $attempt exitoso — el proyecto esta activo."
