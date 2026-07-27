@@ -1,0 +1,4 @@
+project_id = "cgquvuclhkqxwebpgsdx"
+
+[functions.cave-board]
+verify_jwt = false
