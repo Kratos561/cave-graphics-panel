@@ -117,8 +117,9 @@ Deno.serve(async (request) => {
     if (operation === "delete") {
       const id = string(body.id, 100);
       if (!id) throw new Error("Identificador inválido.");
-      const { error } = await database.from("tasks").delete().eq("id", id);
+      const { data, error } = await database.from("tasks").delete().eq("id", id).select("id").maybeSingle();
       if (error) throw error;
+      if (!data) throw new Error("El proyecto ya no existe.");
       return response({ ok: true });
     }
     return response({ error: "Operación no permitida." }, 400);
