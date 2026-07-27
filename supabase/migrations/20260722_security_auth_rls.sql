@@ -105,4 +105,17 @@ create policy "health_check_public_write"
   on public.health_check for update
   using (true) with check (true);
 
+-- El flujo vigente usa enlaces-capacidad y la funcion cave-board.
+-- Mantener tasks sin politicas evita que una reconstruccion futura reactive el login por correo.
+do $$
+declare policy_record record;
+begin
+  for policy_record in select policyname from pg_policies where schemaname = 'public' and tablename = 'tasks' loop
+    execute format('drop policy if exists %I on public.tasks', policy_record.policyname);
+  end loop;
+end $$;
+
+alter table public.tasks enable row level security;
+revoke all on table public.tasks from anon, authenticated;
+
 commit;
