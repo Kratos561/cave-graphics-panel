@@ -59,6 +59,10 @@ function taskPayload(value: Record<string, unknown>, partial = false) {
     if (!Number.isFinite(amount) || amount < 0 || amount > 100000000) throw new Error("Abono inválido.");
     next.payment_amount = amount;
   }
+  if (!partial || "paid_in_full" in value) {
+    if (typeof value.paid_in_full !== "boolean") throw new Error("Estado de pago inválido.");
+    next.paid_in_full = value.paid_in_full;
+  }
   if (!partial || "status" in value) {
     const status = string(value.status, 24) || "pendiente";
     if (!statuses.has(status)) throw new Error("Estado inválido.");
