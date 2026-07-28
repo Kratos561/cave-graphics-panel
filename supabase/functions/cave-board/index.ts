@@ -90,6 +90,13 @@ Deno.serve(async (request) => {
 
   try {
     if (request.method === "GET") {
+      const expiredAt = Date.now() - 48 * 60 * 60 * 1000;
+      const { error: cleanupError } = await database
+        .from("tasks")
+        .delete()
+        .not("deleted_at", "is", null)
+        .lt("deleted_at", expiredAt);
+      if (cleanupError) throw cleanupError;
       const { data, error } = await database.from("tasks").select("*").order("updated_at", { ascending: false });
       if (error) throw error;
       return response({ data });
