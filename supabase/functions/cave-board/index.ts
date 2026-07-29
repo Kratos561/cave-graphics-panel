@@ -86,6 +86,14 @@ function taskPayload(value: Record<string, unknown>, partial = false) {
   return next;
 }
 
+function debtPayload(value: Record<string, unknown>) {
+  const client = string(value.client, 220);
+  if (!client) throw new Error("El cliente es obligatorio.");
+  const amountDue = Number(value.amount_due ?? 0);
+  if (!Number.isFinite(amountDue) || amountDue <= 0 || amountDue > 100000000) throw new Error("El saldo pendiente debe ser mayor que cero.");
+  return { client, amount_due: amountDue, note: string(value.note, 1000) || null };
+}
+
 Deno.serve(async (request) => {
   if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
   const origin = request.headers.get("origin");
@@ -106,9 +114,13 @@ Deno.serve(async (request) => {
         .not("deleted_at", "is", null)
         .lt("deleted_at", expiredAt);
       if (cleanupError) throw cleanupError;
-      const { data, error } = await database.from("tasks").select("*").order("updated_at", { ascending: false });
+      const [{ data, error }, { data: debts, error: debtsError }] = await Promise.all([
+        database.from("tasks").select("*").order("updated_at", { ascending: false }),
+        database.from("debts").select("*").order("updated_at", { ascending: false }),
+      ]);
       if (error) throw error;
-      return response({ data });
+      if (debtsError) throw debtsError;
+      return response({ data, debts });
     }
 
     const body = await request.json();
@@ -136,6 +148,23 @@ Deno.serve(async (request) => {
       const { data, error } = await database.from("tasks").delete().eq("id", id).select("id").maybeSingle();
       if (error) throw error;
       if (!data) throw new Error("El proyecto ya no existe.");
+      return response({ ok: true });
+    }
+    if (operation === "debt_insert") {
+      const supplied = body.debt ?? {};
+      const id = string(supplied.id, 100);
+      if (!id) throw new Error("Identificador inválido.");
+      const debt = { id, ...debtPayload(supplied), created_at: Date.now(), updated_at: Date.now() };
+      const { data, error } = await database.from("debts").insert(debt).select().single();
+      if (error) throw error;
+      return response({ data }, 201);
+    }
+    if (operation === "debt_delete") {
+      const id = string(body.id, 100);
+      if (!id) throw new Error("Identificador inválido.");
+      const { data, error } = await database.from("debts").delete().eq("id", id).select("id").maybeSingle();
+      if (error) throw error;
+      if (!data) throw new Error("El cobro ya no existe.");
       return response({ ok: true });
     }
     return response({ error: "Operación no permitida." }, 400);
